@@ -22,8 +22,7 @@ Es ist ein wahres AiO Script, es kann einiges an Arbeit abnehmen, denoch sollte 
 
 1. Klonen Sie dieses Repository in Ihre lokale Umgebung:
 
-    git
-    git clone https://github.com/IhrUsername/Warez-Szene Releaser.git
+    git clone https://github.com/zer0de-r00tSec/Warez-Releaser.git
     
 
 2. Navigieren Sie in das Verzeichnis:
