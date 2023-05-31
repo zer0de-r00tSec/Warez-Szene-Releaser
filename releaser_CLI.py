@@ -1,15 +1,8 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-###########
-##
-# ToDo
-##
-##
-##########
-
 # Debug ON/OFF
-DEBUG = 1
+DEBUG = 0
 
 # iMPORT ALL MODULES
 import json
