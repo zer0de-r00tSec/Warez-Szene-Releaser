@@ -36,6 +36,9 @@ Es ist ein wahres AiO Script, es kann einiges an Arbeit abnehmen, denoch sollte 
 
     bash
     pip install -r requirements.txt
+
+    Optional - GUI nutzung
+    apt install python3-tk
     
 
 ## Verwendung
