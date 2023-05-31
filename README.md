@@ -52,14 +52,10 @@ mp.hauptfunktion()
 
 ## Mitwirken
 
-Wenn Sie an diesem Projekt mitwirken möchten, lesen Sie bitte die CONTRIBUTING.md-Datei, um zu erfahren, wie Sie das tun können.
-
-## Lizenz
-
-Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe die [LICENSE.md](LICENSE.md) Datei für Details.
+ihr wisst es doch eh :-)
 
 ## Kontakt
 
-Ihr Name - IhrEmail@Beispiel.com
+Ihr Name - zer0.de@inbox.lv
 
-Projekt Link: [https://github.com/IhrUsername/Warez-Szene Releaser](https://github.com/IhrUsername/Warez-Szene Releaser)
+Projekt Link: [https://github.com/zer0de-r00tSec/Warez-Releaser](https://github.com/zer0de-r00tSec/Warez-Releaser)
