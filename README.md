@@ -44,15 +44,21 @@ Es ist ein wahres AiO Script, es kann einiges an Arbeit abnehmen, denoch sollte 
 ## Verwendung
 
 # zeigt die Syntax mit Hilfe an
-python releaser_CLI.py <Ordnder mit zu packenden Files> <der Ziel Ordner> <Source der Files zB. DVD oder BDRiP> <deine config datei> <verbose>
+    python releaser_CLI.py <Ordnder mit zu packenden Files> <der Ziel Ordner> <Source der Files zB. DVD oder BDRiP> <deine config datei> <verbose>
 
 
 # startet das program autonm
-python releaser_CLI.py /source/ /dest/ DVD config_DVD.ini
+    python releaser_CLI.py /source/ /dest/ DVD config_DVD.ini
 
 # startet das program Interaktiv
-python releaser_CLI.py /source/ /dest/ DVD config_DVD.ini verbose
+    python releaser_CLI.py /source/ /dest/ DVD config_DVD.ini verbose
 
+
+
+## ToDo
+  GUI Updaten, Config bereich etc.
+  dupe APIs adden
+  ...
 
 ## Mitwirken
 
