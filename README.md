@@ -16,6 +16,7 @@ Es ist ein wahres AiO Script, es kann einiges an Arbeit abnehmen, denoch sollte 
 * Dupe Check - Prüfung via API auf dupe ( Vorhanden sein eines gleichen Releases)
 * FTP Upload
 * Pre announce, auf Telegram
+* läuft in threading standart sind 10 files gleichzeitig bearbeiten, config in der ini vornehmen
 
 
 ## Installation
@@ -39,15 +40,15 @@ Es ist ein wahres AiO Script, es kann einiges an Arbeit abnehmen, denoch sollte 
 
 ## Verwendung
 
-Geben Sie hier eine kurze Demonstration darüber, wie man Ihr Projekt verwendet. Zum Beispiel:
+# zeigt die Syntax mit Hilfe an
+python releaser_CLI.py <Ordnder mit zu packenden Files> <der Ziel Ordner> <Source der Files zB. DVD oder BDRiP> <deine config datei> <verbose>
 
-import Warez-Szene Releaser
 
-# Erstellen Sie eine Instanz des Hauptobjekts
-mp = Warez-Szene Releaser.HauptObjekt()
+# startet das program autonm
+python releaser_CLI.py /source/ /dest/ DVD config_DVD.ini
 
-# Rufen Sie die Hauptfunktion auf
-mp.hauptfunktion()
+# startet das program Interaktiv
+python releaser_CLI.py /source/ /dest/ DVD config_DVD.ini verbose
 
 
 ## Mitwirken
