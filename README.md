@@ -1,10 +1,10 @@
-# Warez-Szene Releaser
+# Warez-Szene-Releaser
 
-Dies ist die README-Datei für das Projekt "Warez-Szene Releaser". Dieses Projekt wurde entwickelt, um den Groups, noobs oder einfach nur Ordnungs vernatiker, eine einheitliche Struktur zu bieten.
+Dies ist die README-Datei für das Projekt "Warez-Szene-Releaser". Dieses Projekt wurde entwickelt, um den Groups, noobs oder einfach nur Ordnungs vernatiker, eine einheitliche Struktur zu bieten.
 
 ## Beschreibung
 
-Es ist ein wahres AiO Script, es kann einiges an Arbeit abnehmen, denoch sollte das ergebnis kontrolliert werden. Stichwort IMDB-Link.
+Es ist ein wahres AiO Script, es kann einiges an Arbeit abnehmen, dennoch sollte das ergebnis kontrolliert werden. Stichwort IMDB-Link.
 
 
 ## Features
@@ -29,7 +29,7 @@ Es ist ein wahres AiO Script, es kann einiges an Arbeit abnehmen, denoch sollte 
 2. Navigieren Sie in das Verzeichnis:
 
     bash
-    cd Warez-Szene Releaser
+    cd Warez-Szene-Releaser
     
 
 3. Installieren Sie die notwendigen Abhängigkeiten:
