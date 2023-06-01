@@ -1,8 +1,15 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+###########
+##
+# ToDo
+##
+##
+##########
+
 # Debug ON/OFF
-DEBUG = 0
+DEBUG = 1
 
 # iMPORT ALL MODULES
 import json
@@ -807,7 +814,7 @@ def create_nfo(movie_complete_path, destination, movie, filename, file_source, I
     print(f"{GREEN}    [+] NFO Created for {movie[:-4]}")
 
 def create_nfo_with_template(media_file_content, nfo_template, destination, filename, movie):
-    general_duration, general_file_size, video_res, video_bit_rate, audio_string, subs_string = infos_extrahieren_aus_file(media_file_content)
+    general_duration, general_file_size, video_res, video_bit_rate, audio_string, subs_string = extract_info_of_file(media_file_content)
 
     file = os.path.splitext(movie)[0]
     movie_nfo = f"{destination}{separator}{file}{separator}"
@@ -849,7 +856,7 @@ def create_nfo_with_template(media_file_content, nfo_template, destination, file
     "{subtitles}": subs
     }
 
-    platzhalter_in_ziel_nfo_ersetzen(nfo_template, replacements, movie_nfo)
+    placeholder_replacer(nfo_template, replacements, movie_nfo)
 
 def create_sfv_file(destination_path, filename, SUBS_DIR, PROOF_DIR):
     """Creates SFV file for a given movie and optional directories for subs and proof"""
@@ -992,7 +999,7 @@ def get_valid_input(input, name):
             print(
                 f"{RED}    [!] Invalid input. Allowed characters are alphanumeric, '.', '_', and '-'.")
 
-def infos_extrahieren_aus_file(source):
+def extract_info_of_file(source):
     general_duration = general_file_size = video_res = video_bit_rate = audio_string = ""
     text_entries = []
     audio_blocks = []
@@ -1092,7 +1099,7 @@ def infos_extrahieren_aus_file(source):
 
     return general_duration, general_file_size, video_res, video_bit_rate, audio_string, subs_string
 
-def platzhalter_in_ziel_nfo_ersetzen(nfo_template_file, replacements, target_nfo):
+def placeholder_replacer(nfo_template_file, replacements, target_nfo):
     if DEBUG == 1:
          print(f"{YELLOW}    NFO-File: {nfo_template_file} ZIEL NFO: {target_nfo}")
 

@@ -1,8 +1,9 @@
 import os
 import sys
+import subprocess
 from time import sleep
 
-REQUIRED_PACKAGES = ['requests', 'wget', 'configparser']
+REQUIRED_PACKAGES = ['requests', 'wget', 'configparser', 'subprocess']
 
 # Import-Anweisungen
 for package in REQUIRED_PACKAGES:
@@ -12,10 +13,11 @@ for package in REQUIRED_PACKAGES:
         print(f"Error: Missing {package}, installing it now...")
         os.system(f"pip install {package}")
     
-    # Neustart der Anwendung nach der Installation der Pakete
-    sleep(1)
-    sys.stdout.flush()
-    os.execv(sys.argv[0], sys.argv)
+        # Neustart der Anwendung nach der Installation der Pakete
+        print(f"Starte nun neu nach der Instalation der pakete!")
+        sleep(1)
+        sys.stdout.flush()
+        subprocess.call([sys.executable] + sys.argv)
 
 # Import-Anweisungen nach der Installation der Pakete
 import requests
@@ -39,6 +41,7 @@ def main():
                 current_version = file.read()
             if latest_version != current_version:
                 return True
+        print(f"Kein Update gefunden!")
         return False
 
     # Überprüfung der Auto-Update-Einstellung in der INI-Datei
@@ -60,19 +63,22 @@ def main():
         target_dir = os.getcwd()
         
         # Herunterladen der ZIP-Datei
+        print(f"Lade Paket herunter")
         wget.download(download_url, temp_zip_file)
         
         # Entpacken der ZIP-Datei
+        print(f"Entpacke")
         with zipfile.ZipFile(temp_zip_file, 'r') as zip_ref:
             zip_ref.extractall(target_dir)
         
         # Aufräumen
+        print(f"Räume auf")
         os.remove(temp_zip_file)
         
         print("Update erfolgreich durchgeführt. Die Anwendung wird neu gestartet.")
+        print(f"Starte nun neu!")
         sleep(5)
-        sys.stdout.flush()
-        os.execv(sys.argv[0], sys.argv)
+        subprocess.call([sys.executable] + sys.argv)
 
     if check_version():
         if is_auto_update_enabled(ini_file_path):
@@ -86,4 +92,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
