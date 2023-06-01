@@ -3,7 +3,7 @@ import sys
 import subprocess
 from time import sleep
 
-REQUIRED_PACKAGES = ['requests', 'wget', 'configparser', 'subprocess']
+REQUIRED_PACKAGES = ['requests', 'wget', 'configparser', 'subprocess', 'datetime']
 
 # Import-Anweisungen
 for package in REQUIRED_PACKAGES:
@@ -24,6 +24,35 @@ import requests
 import wget
 import configparser
 import zipfile
+import datetime
+
+def should_run_updater():
+    # Pfad zur update.ini-Datei
+    ini_file_path = "updater.ini"
+
+    # Aktuelles Datum
+    current_date = datetime.date.today().strftime("%Y-%m-%d")
+
+    config = configparser.ConfigParser()
+    config.read(ini_file_path)
+
+    # Lesen des gespeicherten Datums aus der update.ini-Datei
+    last_update_date = config.get('Updater', 'LastUpdateDate')
+
+    if last_update_date != current_date:
+        # Wenn das Datum in der update.ini-Datei nicht mit dem aktuellen Datum übereinstimmt,
+        # wird der Updater ausgeführt und das Datum aktualisiert
+        update_timestamp(ini_file_path, current_date)
+        return True
+
+    return False
+
+def update_timestamp(ini_file_path, current_date):
+    config = configparser.ConfigParser()
+    config['Updater'] = {'LastUpdateDate': current_date}
+
+    with open(ini_file_path, 'w') as config_file:
+        config.write(config_file)
 
 def main():
     # GitHub URL zur Versionsdatei
@@ -91,4 +120,5 @@ def main():
                 print("Update abgebrochen. Die Anwendung wird normal gestartet.")
 
 if __name__ == "__main__":
-    main()
+    if should_run_updater():
+        main()

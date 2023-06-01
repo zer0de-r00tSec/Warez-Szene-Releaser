@@ -19,6 +19,9 @@ import datetime
 import os
 import sys
 
+# iMPORT UPDATER
+import updater
+
 try:
     from ftplib import FTP, error_perm, FTP_TLS
 except:
@@ -1324,6 +1327,10 @@ def banner():
 if __name__ == '__main__':
     if len(sys.argv) >= 5:
         banner()
+
+        print(f"    [*] Szene Releaser check for Update")
+        updater.main()
+
         # CHECK iF FiLE EXiSTS
         input_folder = sys.argv[1]
         destination_dir = sys.argv[2]
