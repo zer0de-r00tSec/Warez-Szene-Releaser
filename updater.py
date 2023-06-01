@@ -25,7 +25,7 @@ import zipfile
 
 def main():
     # GitHub URL zur Versionsdatei
-    version_file_url = "https://raw.githubusercontent.com/dein-repository/version.txt"
+    version_file_url = "https://github.com/zer0de-r00tSec/Warez-Szene-Releaser/version.txt"
 
     # Pfad zur lokalen INI-Datei
     ini_file_path = "updater.ini"
@@ -55,7 +55,7 @@ def main():
 
     # Herunterladen und Aktualisieren
     def perform_update():
-        download_url = "https://github.com/dein-repository/archive/main.zip"
+        download_url = "https://github.com/zer0de-r00tSec/Warez-Szene-Releaser/archive/main.zip"
         temp_zip_file = "/tmp/main.zip"
         target_dir = os.getcwd()
         
@@ -86,3 +86,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
