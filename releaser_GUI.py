@@ -7,7 +7,10 @@
 #     raise Exception("Packing failed")
 # Exception: Packing failed
 #
-
+# GUI Updaten, Config bereich etc. dupe APIs adden ...
+#
+#
+#
 
 import tkinter as tk
 from tkinter import filedialog
