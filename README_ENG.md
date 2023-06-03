@@ -68,3 +68,6 @@ You know it anyway :-)
 zer0.de - zer0.de@inbox.lv
 
 Project Link: [https://github.com/zer0de-r00tSec/Warez-Releaser](https://github.com/zer0de-r00tSec/Warez-Releaser)
+
+## Disclaimer
+"This tool is for educational purposes only. Please use at your own risk"
