@@ -43,17 +43,17 @@ Es ist ein wahres AiO Script, es kann einiges an Arbeit abnehmen, dennoch sollte
 
 ## Verwendung
 
-# zeigt die Syntax mit Hilfe an
-![grafik](https://github.com/zer0de-r00tSec/Warez-Szene-Releaser/assets/118939020/c7dee607-86e6-492d-bf75-02f5b1352f46)
-    
-    python releaser_CLI.py <Ordnder mit zu packenden Files> <der Ziel Ordner> <Source der Files zB. DVD oder BDRiP> <deine config datei> <verbose>
+    # zeigt die Syntax mit Hilfe an
+    ![grafik](https://github.com/zer0de-r00tSec/Warez-Szene-Releaser/assets/118939020/c7dee607-86e6-492d-bf75-02f5b1352f46)
+
+        python releaser_CLI.py <Ordnder mit zu packenden Files> <der Ziel Ordner> <Source der Files zB. DVD oder BDRiP> <deine config datei> <verbose>
 
 
-# startet das program autonm
-    python releaser_CLI.py /source/ /dest/ DVD config_DVD.ini
+    # startet das program autonm
+        python releaser_CLI.py /source/ /dest/ DVD config_DVD.ini
 
-# startet das program Interaktiv
-    python releaser_CLI.py /source/ /dest/ DVD config_DVD.ini verbose
+    # startet das program Interaktiv
+        python releaser_CLI.py /source/ /dest/ DVD config_DVD.ini verbose
 
 
 
