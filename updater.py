@@ -49,8 +49,12 @@ def should_run_updater():
 
 def update_timestamp(ini_file_path, current_date):
     config = configparser.ConfigParser()
-    config['Updater'] = {'LastUpdateDate': current_date}
+    config.read(ini_file_path)
 
+    # Aktualisiere den Wert von 'LastUpdateDate' in der Konfigurationsdatei
+    config['Updater']['LastUpdateDate'] = current_date
+
+    # Schreibe die aktualisierten Werte zurück in die Datei
     with open(ini_file_path, 'w') as config_file:
         config.write(config_file)
 
