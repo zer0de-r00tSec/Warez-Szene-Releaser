@@ -67,7 +67,6 @@ Es ist ein wahres AiO Script, es kann einiges an Arbeit abnehmen, dennoch sollte
 ihr wisst es doch eh :-)
 
 ## Kontakt
-
-Ihr Name - zer0.de@inbox.lv
+zer0.de - zer0.de@inbox.lv
 
 Projekt Link: [https://github.com/zer0de-r00tSec/Warez-Releaser](https://github.com/zer0de-r00tSec/Warez-Releaser)
