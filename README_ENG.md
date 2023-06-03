@@ -1,5 +1,4 @@
-Warez-Szene-Releaser
-#
+# Warez-Szene-Releaser
 
 This is the README file for the project "Warez-Szene-Releaser". This project was designed to offer a uniform structure to groups, novices, or simply order enthusiasts.
 
