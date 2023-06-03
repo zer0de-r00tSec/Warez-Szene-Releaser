@@ -42,14 +42,14 @@ It is a true AiO (All-in-One) script, it can take on quite a bit of work, nevert
 
 ## Usage
 
-# shows the syntax with help
+### shows the syntax with help
     python releaser_CLI.py <Folder with files to be packed> <the target folder> <Source of the files e.g. DVD or BDRiP> <your config file> <verbose>
 
 
-# starts the program autonomously
+### starts the program autonomously
     python releaser_CLI.py /source/ /dest/ DVD config_DVD.ini
 
-# starts the program interactively
+### starts the program interactively
     python releaser_CLI.py /source/ /dest/ DVD config_DVD.ini verbose
 
 
