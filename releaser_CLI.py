@@ -1221,7 +1221,7 @@ def run(source_dir, destination_dir, movie_complete_path, config_file, file_sour
         print(f"{YELLOW}    [*] Subs Packing for {movie}")
         ext = "-n*.*"
         packing(ext, f"{release_dir_dest}{separator}Subs{separator}",
-                f"{filename}_subs", f"{source_dir}{separator}Subs{separator}")
+                f"{filename}-subs", f"{source_dir}{separator}Subs{separator}")
         print(f"{GREEN}    [+] Subs Packing done for {movie}")
 
     # PRo0F
@@ -1229,7 +1229,7 @@ def run(source_dir, destination_dir, movie_complete_path, config_file, file_sour
         print(f"{YELLOW}    [*] Proof Packing for {movie}")
         ext = "-n*.jpg"
         packing(ext, f"{release_dir_dest}{separator}Proof{separator}",
-                f"{filename}_proof", f"{source_dir}{separator}Proof{separator}")
+                f"{filename}-proof", f"{source_dir}{separator}Proof{separator}")
         print(f"{GREEN}    [+] Proof Packing done for {movie}")
 
     print(f"{GREEN}    [+] All Packing done for {movie}")
