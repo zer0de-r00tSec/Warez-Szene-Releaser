@@ -1,7 +1,45 @@
 import os
 import sys
 import subprocess
+import platform
 from time import sleep
+
+if platform.system() == 'Linux':
+    linux = 1
+    separator = "/"
+elif platform.system() == 'Windows':
+    linux = 0
+    separator = "\\"
+else:
+    print(f"Unsupported OS {platform.system()}")
+    sys.exit(1)
+
+
+if linux == 1:
+    # LiNUX COLOR CODES (SHELL)
+    BLACK = "\033[0;30m"        # Black
+    RED = "\033[0;31m"          # Red
+    GREEN = "\033[0;32m"        # Green
+    YELLOW = "\033[0;33m"       # Yellow
+    BLUE = "\033[0;34m"         # Blue
+    PURPLE = "\033[0;35m"       # Purple
+    CYAN = "\033[0;36m"         # Cyan
+    WHITE = "\033[0;37m"        # White
+    ENDC = "\033[0m"            # Clear/return
+else:
+    # WiNDOWS COLOR CODES (CMD)
+    os.system("")
+    BLACK = "\033[0;30m"        # Black
+    RED = "\033[0;31m"          # Red
+    GREEN = "\033[0;32m"        # Green
+    YELLOW = "\033[0;33m"       # Yellow
+    BLUE = "\033[0;34m"         # Blue
+    PURPLE = "\033[0;35m"       # Purple
+    CYAN = "\033[0;36m"         # Cyan
+    WHITE = "\033[0;37m"        # White
+    ENDC = "\033[0m"            # Clear/return
+
+
 
 REQUIRED_PACKAGES = ['requests', 'wget', 'configparser', 'subprocess', 'datetime']
 
@@ -10,11 +48,11 @@ for package in REQUIRED_PACKAGES:
     try:
         __import__(package)
     except ImportError:
-        print(f"Error: Missing {package}, installing it now...")
+        print(f"{RED}    [!] Error: Missing {package}, installing it now...")
         os.system(f"pip install {package}")
     
         # Neustart der Anwendung nach der Installation der Pakete
-        print(f"Starte nun neu nach der Instalation der pakete!")
+        print(f"{YELLOW}    [*] Starte nun neu nach der Instalation der pakete!")
         sleep(1)
         sys.stdout.flush()
         subprocess.call([sys.executable] + sys.argv)
@@ -74,7 +112,7 @@ def main():
                 current_version = file.read()
             if latest_version != current_version:
                 return True
-        print(f"Kein Update gefunden!")
+        print(f"{YELLOW}    [!] Kein Update gefunden!")
         return False
 
     # Überprüfung der Auto-Update-Einstellung in der INI-Datei
@@ -96,20 +134,20 @@ def main():
         target_dir = os.getcwd()
         
         # Herunterladen der ZIP-Datei
-        print(f"Lade Paket herunter")
+        print(f"{YELLOW}    [*] Lade Paket herunter")
         wget.download(download_url, temp_zip_file)
         
         # Entpacken der ZIP-Datei
-        print(f"Entpacke")
+        print(f"{YELLOW}    [*] Entpacke")
         with zipfile.ZipFile(temp_zip_file, 'r') as zip_ref:
             zip_ref.extractall(target_dir)
         
         # Aufräumen
-        print(f"Räume auf")
+        print(f"{YELLOW}    [*] Räume auf")
         os.remove(temp_zip_file)
         
-        print("Update erfolgreich durchgeführt. Die Anwendung wird neu gestartet.")
-        print(f"Starte nun neu!")
+        print(f"{YELLOW}    [*] Update erfolgreich durchgeführt. Die Anwendung wird neu gestartet.")
+        print(f"{YELLOW}    [*] Starte nun neu!")
         sleep(5)
         subprocess.call([sys.executable] + sys.argv)
 
@@ -121,7 +159,7 @@ def main():
             if choice.lower() == 'j':
                 perform_update()
             else:
-                print("Update abgebrochen. Die Anwendung wird normal gestartet.")
+                print(f"{RED}    [*]Update abgebrochen. Die Anwendung wird normal gestartet.")
 
 if __name__ == "__main__":
     if should_run_updater():
