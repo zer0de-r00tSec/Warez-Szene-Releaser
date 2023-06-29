@@ -46,7 +46,7 @@ else:
     sys.exit(1)
 
 ___AUTHOR___ = 'zer0.de^r00tSec'
-___VERSION___ = '2.2.1'
+___VERSION___ = '2.2.2'
 
 if linux == 1:
     # LiNUX COLOR CODES (SHELL)
@@ -118,7 +118,7 @@ def create_database():
     # Create a table if it doesn't exist
     c.execute('''CREATE TABLE IF NOT EXISTS data
                  (ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                 NAME TEXT PRIMARY KEY,
+                 NAME TEXT,
                  LINK_ID TEXT)''')
 
     conn.commit()
@@ -567,7 +567,7 @@ def extract_info(input_string, dupe=False):
             for pattern in patterns:
                 dupe_str = dupe_str.replace(pattern[0], pattern[1])
 
-            print(f"{CYAN}    [!] Search in DB: " + str(dupe_str))
+            print(f"{CYAN}    [!] Search in PRE-DB: " + str(dupe_str))
 
             return dupe_str
 
@@ -655,20 +655,20 @@ def get_imdb_link(movie_complete_path, destination_dir, IMDB_USE):
     if IMDB_USE == 1:
         # CHECK WHETHER MOViE OR SERiES
         tmp = filename
-        imdb_search = re.sub(
-            r"[.,_-]|S\d{2}E\d{2}|E\d{3}|480p|720p|1080p|2160p", " ", tmp, flags=re.IGNORECASE).strip()
+        match = re.search(r"(.*?)\b(?:S\d{2}E\d{2}|E\d{2}|german)\b", tmp, flags=re.IGNORECASE)
+        imdb_search = match.group(1) if match else ""
+        
+        imdb_search = re.sub(r"[.,_]", " ", imdb_search)
 
         # check if movie is in DB
-        result = select_data(f"imdb_search")
+        result = select_data(f"{imdb_search}")
         if result != "":
-            return f"https://www.imdb.com/title/{result}"
+            return f"https://www.imdb.com/title/{result}", {imdb_search}
         else:
             IMDB_LINK, IMDB_ID = find_imdb_link(imdb_search)
     else:
         IMDB_LINK = ""
 
-    # put result in database
-    insert_data(imdb_search, IMDB_ID)
     return IMDB_LINK, imdb_search
 
 def create_dirs(source_dir, release_dir_dest):
@@ -1338,11 +1338,11 @@ if __name__ == '__main__':
         config_file = sys.argv[4]
 
         # check if Config exists
-        if os.path.isfile(f"./config/{sys.argv[4]}"):
-            config_file = f"./config/{sys.argv[4]}"
+        if os.path.isfile(f"./config/{config_file}"):
+            config_file = f"./config/{config_file}"
         else:
             print(
-                f"{RED}    [*] {sys.argv[4]} doesnt exits, make sure it is in path!")
+                f"{RED}    [*] ./config/{config_file} doesnt exits, make sure it is in path!")
             sys.exit(1)
         # check if database file exists
         if not os.path.isfile(f"{DATABASE_FILE}"):
