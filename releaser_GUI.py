@@ -26,7 +26,7 @@ _script = sys.argv[0]
 _location = os.path.dirname(_script)
 
 ___AUTHOR___  = 'zer0.de^r00tSec'
-___VERSION___ = '2.0'
+___VERSION___ = '2.2.2'
 
 _bgcolor = '#d9d9d9'  # X11 color: 'gray85'
 _fgcolor = '#000000'  # X11 color: 'black'

@@ -1,0 +1,8 @@
+Runtime.................: {general_duration}
+Groesse.................: {general_file_size}
+Resolution..............: {video_res}px
+Bitrate.................: {video_bit_rate}
+Audio...................: {audio_string}
+Subtitle................: {subtitles}
+IMDB....................: {imdb_link}
+Notes...................: 

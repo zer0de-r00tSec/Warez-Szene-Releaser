@@ -1,6 +1,12 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+##
+# Todo
+# 
+#
+
+
 # Debug ON/OFF
 DEBUG = 0
 
@@ -18,6 +24,9 @@ import time
 import datetime
 import os
 import sys
+import shutil
+import string
+
 
 # iMPORT UPDATER
 import updater
@@ -75,7 +84,7 @@ else:
 # CODE START
 DATABASE_FILE = 'releaser.db'
 config_file = './config/config.ini'
-
+IMDB_LINK = None
 
 class IRC:
     UTF8 = "UTF-8"
@@ -392,14 +401,27 @@ def load_random_sentence(file_path):
         sentence = random.choice(lines).strip()
         return sentence
 
+def generate_random_string(length=5):
+    # Zeichen, die für den zufälligen String verwendet werden sollen (Buchstaben und Zahlen)
+    characters = string.ascii_letters + string.digits
+    # Generiere den zufälligen String
+    random_string = ''.join(random.choice(characters) for _ in range(length))
+    return random_string
+
 def filter_name(name):
     name = re.sub('[._\\-]', ' ', name)
     regex = r'^.*?(?=(19\d{2}|20\d{2}|german|S\d+E\d+|$))'
     match = re.search(regex, name)
     if match:
         found = match.group()
-        # REMOVE CRAP
+        # Entferne überflüssige Zeichen und Leerzeichen
         found = found.rstrip('.mkv').rstrip('.')
+        # Finde das Jahr
+        year_match = re.search(r'(19\d{2}|20\d{2})', name)
+        if year_match:
+            year = year_match.group()
+            found = found.replace(year, '')  # Entferne das Jahr aus dem Namen
+            found = found.strip() + "&y=" + year  # Füge das Jahr ans Ende des Namens an
         return found
     else:
         return ''
@@ -642,7 +664,7 @@ def find_imdb_link(imdb_search):
         print(f"{RED}    [!] IMDB-API sends a Error - {err}")
         return "", ""
 
-def get_imdb_link(movie_complete_path, destination_dir, IMDB_USE):
+def get_imdb_link(movie_complete_path):
     movie = os.path.split(movie_complete_path)[1].lower()
 
     # FiND MOViE NAME
@@ -652,12 +674,11 @@ def get_imdb_link(movie_complete_path, destination_dir, IMDB_USE):
         filename = movie
 
     # GET iMDB iD
-    if IMDB_USE == 1:
         # CHECK WHETHER MOViE OR SERiES
         tmp = filename
         match = re.search(r"(.*?)\b(?:S\d{2}E\d{2}|E\d{2}|german)\b", tmp, flags=re.IGNORECASE)
         imdb_search = match.group(1) if match else ""
-        
+      
         imdb_search = re.sub(r"[.,_]", " ", imdb_search)
 
         # check if movie is in DB
@@ -666,9 +687,60 @@ def get_imdb_link(movie_complete_path, destination_dir, IMDB_USE):
             return f"https://www.imdb.com/title/{result}", {imdb_search}
         else:
             IMDB_LINK, IMDB_ID = find_imdb_link(imdb_search)
-    else:
-        IMDB_LINK = ""
 
+    return IMDB_LINK, imdb_search
+
+def find_omdb_link(imdb_search):
+    # GET ALL NECESERY VARs
+    config = configparser.ConfigParser()
+    config.read(config_file)
+    OMDB_API_KEY = config.get('OMDB', 'OMDB_API_KEYS')
+
+    # check if key is valid or change it 
+
+    """Search for a movie using OMDB API"""
+    try:
+        url = f"http://www.omdbapi.com/?apikey={OMDB_API_KEY}&t={imdb_search}"
+        #print(f"DEBUG: {url}")
+        response = requests.get(url)
+        data = response.json()
+
+        if response.status_code == 200 and data['Response'] == 'True':
+            imdb_id = data['imdbID']
+            if DEBUG == 1:
+                print(
+                f"{YELLOW}    [*] ID des Films        : {imdb_id}")
+            
+            # insert result in db
+            insert_data(imdb_search, imdb_id)
+
+            return f"https://www.imdb.com/title/{imdb_id}", imdb_search
+
+    except requests.exceptions.HTTPError as err:
+        # Behandlung von HTTP-Fehlern
+        print(f"{RED}    [!] IMDB-API sends a Error - {err}")
+        return "", ""
+    except requests.exceptions.RequestException as err:
+        # Behandlung von anderen Ausnahmen (z.B. Verbindungsfehler)
+        print(f"{RED}    [!] IMDB-API sends a Error - {err}")
+        return "", ""
+
+def get_omdb_link(movie_complete_path):
+    movie = os.path.split(movie_complete_path)[1].lower()
+    
+    # FiND MOViE NAME
+    imdb_search = filter_name(movie)
+    # iF EMPTY STRiNG SET TEMP NAME
+    if imdb_search == '':
+        imdb_search = movie
+
+    # check if movie is in DB
+    result = select_data(f"{imdb_search}")
+    if result != "":
+        return f"https://www.imdb.com/title/{result}", {imdb_search}
+    else:
+            IMDB_LINK = find_omdb_link(imdb_search)
+    
     return IMDB_LINK, imdb_search
 
 def create_dirs(source_dir, release_dir_dest):
@@ -726,7 +798,7 @@ def cut_movie(movie_complete_path, release_dir_dest, filename, CUT_FROM, CUT_TO)
         os.system(sample_cut)
 
         # CHECK iF FiLE WAS CREATED
-        sample_file = os.path.join(release_dir_dest, "Sample", movie_sample)
+        sample_file = os.path.join(movie_sample)
         if os.path.isfile(sample_file):
             print(f"{GREEN}    [+] Cutting done {movie}")
             return True
@@ -748,11 +820,20 @@ def create_nfo(movie_complete_path, destination, movie, filename, file_source, I
     NFO_GROUP_NAME = config.get('NFO', 'NFO_GROUP_NAME')
     NFO_GROUP_NAME_SHORT = config.get('NFO', 'NFO_GROUP_NAME_SHORT')
     MORE_NOTES = config.get('NFO', 'NOTES')
+    CODEC_REPLACEMENTS = dict(config.items('REPLACEMENTS'))
 
     file = os.path.splitext(movie)[0]
     movie_nfo = f"{destination}{separator}{file}{separator}"
     movie_nfo += f"{filename}.nfo".lower()
     print(f"{YELLOW}    [*] NFO started for {filename}")
+
+    # replace \\n with \r\n on windows
+    if linux == 1:
+        MORE_NOTES = MORE_NOTES.replace("\\n", "\n")
+        MORE_NOTES = MORE_NOTES.replace("\\t", "\t")
+    else:
+        MORE_NOTES = MORE_NOTES.replace("\\n", "\r\n")
+        MORE_NOTES = MORE_NOTES.replace("\\t", "\t")
 
     if DEBUG == 1:
         print(f"{YELLOW}    [*] movie_nfo = {movie_nfo}")
@@ -764,26 +845,21 @@ def create_nfo(movie_complete_path, destination, movie, filename, file_source, I
     else:
         TOUCH = f" {MORE_NOTES}"
 
-    # GET CODEC
-    start = os.path.splitext(movie)[0].rfind(
-        ".") + 1  # Index des ersten "." plus 1
-    # Index des ersten "-" nach dem "." gefunden
-    end = os.path.splitext(movie)[0].rfind("-", start)
-    codec = os.path.splitext(movie)[0][start:end]
-
     # CHANGE iT HERE
     GROUP_NAME = f"{NFO_GROUP_NAME}\n\n"
 
     # PATH TO THE NFO TEMPLATE
-    NFO_TEMPLATE = f".{separator}{NFO_GROUP_NAME_SHORT}_nfo.txt"
+    NFO_TEMPLATE = f"{os.path.abspath(".")}{separator}config{separator}{NFO_GROUP_NAME_SHORT}_nfo.txt"
     # APPEND ON TOP
-    NFO_HEADER = f"RELEASE               : {os.path.basename(destination + separator + os.path.splitext(movie)[0])}\nDATE                  : {now.strftime('%d-%m-%Y')}\nSOURCE                : {file_source}\nCODEC                 : {codec}"
+    NFO_HEADER = f"RELEASE               : {os.path.basename(destination + separator + os.path.splitext(movie)[0])}\nDATE                  : {now.strftime('%d-%m-%Y')}\nSOURCE                : {file_source}\n"
     # APPEND ON FOOTER
     NFO_FOOTER = f"IMDB                  : {IMDB_LINK}\n\nNOTES                 :{TOUCH}"
     # CHANGE END!
 
-    # ADD ADDiTiONAL iNFOS TO NFO ON TOP
+    # WROTE THE HEADER OF NFO
     write_to_file(movie_nfo, f"{GROUP_NAME}{NFO_HEADER}")
+
+    # THE BODY
 
     if linux == 1:
         syntax = f"mediainfo --Inform=file://\"{NFO_TEMPLATE}\"  \"{movie_complete_path}\" >> \"{movie_nfo}\""
@@ -802,14 +878,34 @@ def create_nfo(movie_complete_path, destination, movie, filename, file_source, I
                 f"{YELLOW}    [*] movie_complete_path : {movie_complete_path}")
             print(f"{YELLOW}    [*] Mediainfo           : {syntax}")
 
-        os.system(f"addons{separator}mediainfo.exe " + syntax)
+        os.system(f"addons{separator}mediainfo.exe {syntax}")
 
     # AT THE END
     write_to_file(movie_nfo, NFO_FOOTER, "a")
 
+    # CHECK NFO CODEC
+    movie_nfo_tmp = f"{movie_nfo}.tmp"
+    shutil.copy(movie_nfo,movie_nfo_tmp)
+    
+    with open(movie_nfo_tmp, 'r') as file:
+        original_content = file.read()
+
+    try:
+        for key, value in CODEC_REPLACEMENTS.items():
+            original_content = original_content.replace(key.upper(), value.upper())
+    except:
+        pass
+        
+    # Schreibe die bearbeitete Ausgabe in eine neue Datei
+    with open(movie_nfo, 'w') as file:
+        file.writelines(original_content)
+    
+    os.remove(movie_nfo_tmp)
+
     print(f"{GREEN}    [+] NFO Created for {movie[:-4]}")
 
 def create_nfo_with_template(media_file_content, nfo_template, destination, filename, movie):
+    global IMDB_LINK
     general_duration, general_file_size, video_res, video_bit_rate, audio_string, subs_string = extract_info_of_file(media_file_content)
 
     file = os.path.splitext(movie)[0]
@@ -849,7 +945,8 @@ def create_nfo_with_template(media_file_content, nfo_template, destination, file
     "{video_res}": video_res,
     "{video_bit_rate}": video_bit_rate,
     "{audio_string}": audios,
-    "{subtitles}": subs
+    "{subtitles}": subs,
+    "{imdb_link}": IMDB_LINK,
     }
 
     placeholder_replacer(nfo_template, replacements, movie_nfo)
@@ -1096,17 +1193,26 @@ def extract_info_of_file(source):
     return general_duration, general_file_size, video_res, video_bit_rate, audio_string, subs_string
 
 def placeholder_replacer(nfo_template_file, replacements, target_nfo):
+    global IMDB_LINK
     if DEBUG == 1:
          print(f"{YELLOW}    NFO-File: {nfo_template_file} ZIEL NFO: {target_nfo}")
 
-    with open(nfo_template_file, "r") as file:
+    nfo_template_file_tmp = "./config/temp.nfo"
+    shutil.copy(nfo_template_file, nfo_template_file_tmp)
+
+    with open(nfo_template_file_tmp, "r") as file:
         original_content = file.read()
 
-    for key, value in replacements.items():
-        original_content = original_content.replace(key, value)
+    try:
+        for key, value in replacements.items():
+            original_content = original_content.replace(key, value)
+    except:
+        pass
 
     with open(target_nfo, "w") as target_file:
         target_file.write(original_content)
+
+    os.remove(nfo_template_file_tmp)
 
 def calculate_indentation(placeholder, target_file):
     with open(target_file, "r") as file:
@@ -1120,6 +1226,8 @@ def calculate_indentation(placeholder, target_file):
         return " " * indentation
 
 def run(source_dir, destination_dir, movie_complete_path, config_file, file_source='WEB', verbose_mode=False):
+    global IMDB_LINK
+
     # GET ALL NECESSARY VARs
     config = configparser.ConfigParser()
     config.read(config_file)
@@ -1131,6 +1239,7 @@ def run(source_dir, destination_dir, movie_complete_path, config_file, file_sour
     FTP_SSL = config.get('FTP', 'FTP_SSL')
     FTP_USER = config.get('FTP', 'FTP_USER')
     FTP_PASS = config.get('FTP', 'FTP_PASS')
+    RAR_USE = config.get('RAR', 'RAR_USE')
     IRC_USE = config.getint('IRC', 'IRC_USE')
     IRC_SERVER = config.get('IRC', 'IRC_SERVER')
     IRC_SERVER_PW = config.get('IRC', 'IRC_SERVER_PW')
@@ -1141,9 +1250,10 @@ def run(source_dir, destination_dir, movie_complete_path, config_file, file_sour
     IRC_MSG = config.get('IRC', 'IRC_MSG')
     CUT_FROM = config.get('SAMPLE', 'CUT_FROM')
     CUT_TO = config.get('SAMPLE', 'CUT_TO')
-    NFO = config.getint('NFO', 'NFO_USE')
+    NFO_USE = config.getint('NFO', 'NFO_USE')
     NFO_GROUP_NAME_SHORT = config.get('NFO', 'NFO_GROUP_NAME_SHORT')
     IMDB_USE = config.getint('IMDB', 'IMDB_USE')
+    OMDB_USE = config.getint('OMDB', 'OMDB_USE')
     TG_USE = config.getint('TELEGRAM', 'TG_USE')
     BOT_ID = config.get('TELEGRAM', 'BOT_ID')
     CHAN_ID = config.get('TELEGRAM', 'CHAN_ID')
@@ -1160,18 +1270,28 @@ def run(source_dir, destination_dir, movie_complete_path, config_file, file_sour
 
     # Check if we are create a dupe
     if DUPE_USE == 1:
-        PREDB_URL = config.get('DUPE', 'PREDB_URL')
-        PREDB_BN = config.get('DUPE', 'PREDB_BN')
-        PREDB_PW = config.get('DUPE', 'PREDB_PW')
+        #PREDB_URL = config.get('DUPE', 'PREDB_URL')
+        #PREDB_BN = config.get('DUPE', 'PREDB_BN')
+        #PREDB_PW = config.get('DUPE', 'PREDB_PW')
         dupe_check_srrdb(extract_info(movie[:-4], dupe=True))
 
     # GET iMDB LiNK
-    LINK, S = get_imdb_link(movie_complete_path, destination_dir, IMDB_USE)
+    if IMDB_USE == 1:
+        LINK, S = get_imdb_link(movie_complete_path)
+    
+        if verbose_mode == True:
+            IMDB_LINK = ask_yes_no_imdb(f"Is the Link {LINK} right?", S)
+        else:
+            IMDB_LINK = LINK
 
-    if verbose_mode == True:
-        IMDB_LINK = ask_yes_no_imdb(f"Is the Link {LINK} right?", S)
-    else:
-        IMDB_LINK = LINK
+    # GET OMDB LiNK
+    if OMDB_USE == 1:
+        LINK, S = get_omdb_link(movie_complete_path)
+    
+        if verbose_mode == True:
+            IMDB_LINK = ask_yes_no_imdb(f"Is the Link {LINK} right?", S)
+        else:
+            IMDB_LINK = LINK
 
     # GET TELEGRAM CAPTiON
     if TG_USE == 1:
@@ -1201,43 +1321,56 @@ def run(source_dir, destination_dir, movie_complete_path, config_file, file_sour
     if movie is not None:
         cut_movie(movie_complete_path, release_dir_dest, filename, CUT_FROM, CUT_TO)
 
-    if NFO == 1:
+    if NFO_USE == 1:
         create_nfo(movie_complete_path, destination_dir, movie, filename, file_source, IMDB_LINK)
 
     if NFO_TEMPLATE_USE == 1:
-        mediainfo_file = f"{source_dir}{separator}mediainfo.txt"
+        rnd_str = generate_random_string()
+        mediainfo_file = f"{source_dir}{separator}mediainfo_{rnd_str}.txt"
         
-        os.system(f"mediainfo  {movie_complete_path} > {mediainfo_file}")
+        try:
+            if linux == 1:
+                os.system(f"mediainfo  {movie_complete_path} > {mediainfo_file}")
+            else:
+                os.system(f"addons{separator}mediainfo.exe {movie_complete_path} > {mediainfo_file}")
+        except Exception as e:
+            print(f"Fehler in mediafile export, siehe: {e}")
+            
         
         create_nfo_with_template(mediainfo_file, NFO_TEMPLATE_FILE, destination_dir, filename, movie)
+        os.remove(mediainfo_file)
  
-    # START RAR
-    print(f"{YELLOW}    [*] Packing Started for {movie}")
-    ext = "-n*" + ".mkv"
-    packing(ext, release_dir_dest, filename, movie_complete_path)
+    if RAR_USE == 1:
+        # START RAR
+        print(f"{YELLOW}    [*] Packing Started for {movie}")
+        ext = "-n*" + ".mkv"
+        packing(ext, release_dir_dest, filename, movie_complete_path)
+        print(f"{GREEN}    [+] Packing done for {movie}")
 
-    # SUBS
-    if SUBS_DIR == 1:
-        print(f"{YELLOW}    [*] Subs Packing for {movie}")
-        ext = "-n*.*"
-        packing(ext, f"{release_dir_dest}{separator}Subs{separator}",
-                f"{filename}-subs", f"{source_dir}{separator}Subs{separator}")
-        print(f"{GREEN}    [+] Subs Packing done for {movie}")
+        # SUBS
+        if SUBS_DIR == 1:
+            print(f"{YELLOW}    [*] Subs Packing for {movie}")
+            ext = "-n*.*"
+            packing(ext, f"{release_dir_dest}{separator}Subs{separator}",
+                    f"{filename}-subs", f"{source_dir}{separator}Subs{separator}")
+            print(f"{GREEN}    [+] Subs Packing done for {movie}")
 
-    # PRo0F
-    if PROOF_DIR == 1:
-        print(f"{YELLOW}    [*] Proof Packing for {movie}")
-        ext = "-n*.jpg"
-        packing(ext, f"{release_dir_dest}{separator}Proof{separator}",
-                f"{filename}-proof", f"{source_dir}{separator}Proof{separator}")
-        print(f"{GREEN}    [+] Proof Packing done for {movie}")
+        # PRo0F
+        if PROOF_DIR == 1:
+            print(f"{YELLOW}    [*] Proof Packing for {movie}")
+            ext = "-n*.jpg"
+            packing(ext, f"{release_dir_dest}{separator}Proof{separator}",
+                    f"{filename}-proof", f"{source_dir}{separator}Proof{separator}")
+            print(f"{GREEN}    [+] Proof Packing done for {movie}")
 
-    print(f"{GREEN}    [+] All Packing done for {movie}")
+        # CREATE A SFV FiLE OF FiLE iN DESTiNATiON
+        print(f"{YELLOW}    [*] SFV Creating Started for {movie}")
+        create_sfv_file(release_dir_dest, filename, SUBS_DIR, PROOF_DIR)
+        print(f"{GREEN}    [+] SFV Creating done for {movie}")
 
-    # CREATE A SFV FiLE OF FiLE iN DESTiNATiON
-    print(f"{YELLOW}    [*] SFV Creating Started for {movie}")
-    create_sfv_file(release_dir_dest, filename, SUBS_DIR, PROOF_DIR)
-    print(f"{GREEN}    [+] SFV Creating done for {movie}")
+    else:
+        # Copy Movie 1:1 in destination
+        shutil.copy(movie_complete_path, release_dir_dest)
 
     # ESTABLiSH FTP CONNECTiON
     # CONNECT
@@ -1259,19 +1392,19 @@ def run(source_dir, destination_dir, movie_complete_path, config_file, file_sour
 
         print(f"{GREEN}    [+] Upload for {movie} done")
 
-    # DEFiNE FUNCTiON FOR SENDiNG MESSAGES TO iRC
-    def send_irc_msg(msg):
-        irc = IRC()
-        con = irc.connect(IRC_SERVER, IRC_PORT, IRC_CHAN,
-                          IRC_BN, IRC_SERVER_PW, IRC_CHAN_PW)
-        if con == True:
-            irc.send(IRC_CHAN, f":{msg} {int(time())}")
-            time.sleep(5)
-            irc.quit()
-            print(f"{GREEN}   [+] IRC Send. {msg} {int(time())}")
-
     # CONNECT TO iRC iF REQUiRED
     if IRC_USE == 1:
+        # DEFiNE FUNCTiON FOR SENDiNG MESSAGES TO iRC
+        def send_irc_msg(msg):
+            irc = IRC()
+            con = irc.connect(IRC_SERVER, IRC_PORT, IRC_CHAN,
+                            IRC_BN, IRC_SERVER_PW, IRC_CHAN_PW)
+            if con == True:
+                irc.send(IRC_CHAN, f":{msg} {int(time())}")
+                time.sleep(5)
+                irc.quit()
+                print(f"{GREEN}   [+] IRC Send. {msg} {int(time())}")
+
         # SEND MESSAGE TO iRC
         release_name = os.path.basename(
             os.path.normpath(release_dir_dest + '/'))
@@ -1331,7 +1464,7 @@ if __name__ == '__main__':
         print(f"    [*] Szene Releaser check for Update")
         updater.main()
 
-        # CHECK iF FiLE EXiSTS
+        # Set Vars
         input_folder = sys.argv[1]
         destination_dir = sys.argv[2]
         file_source = sys.argv[3]
@@ -1361,7 +1494,7 @@ if __name__ == '__main__':
 
     else:
         banner()
-        print(f"\n    usage: {sys.argv[0]} \"Source Directory\" \"Destination Directory\" \"File Source e.g WEB or BR\" \"Optional: custom_config.ini\" \"verbose\" run it in interactiv mode\n\n\n")
+        print(f"\n    usage: {sys.argv[0]} \"Source Directory\" \"Destination Directory\" \"File Source e.g WEB or BR\" \"Optional: custom_config.ini\" \"IMDB_ID\" \"verbose\" run it in interactiv mode \n\n\n")
         sys.exit(1)
 
     if DEBUG == 1:
@@ -1370,12 +1503,18 @@ if __name__ == '__main__':
         print(f"{YELLOW}    [*] ARGV2              : {sys.argv[2]}")
         print(f"{YELLOW}    [*] ARGV3              : {sys.argv[3]}")
         print(f"{YELLOW}    [*] ARGV4              : {sys.argv[4]}")
+        print(f"{YELLOW}    [*] ARGV5              : {sys.argv[5]}")
         print(f"{YELLOW}    [*] INI FILE           : {config_file}")
 
     if "verbose" in sys.argv:
         verbose_mode = True
     else:
         verbose_mode = False
+
+    for arg in sys.argv:
+        if arg.startswith("tt"):
+            IMDB_LINK = "https://www.imdb.com/title/" + arg
+            break
 
     def iterate_video_files(input_folder):
         for filename in os.listdir(input_folder):
