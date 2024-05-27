@@ -66,7 +66,8 @@ Es ist ein wahres AiO Script, es kann einiges an Arbeit abnehmen, dennoch sollte
     2.2.2
         + OMDB Support, IMDB Free ist Abgeschaltet worden, daher die Alternative
         + Replacements vom Codec, statt MPEG-4 MP4 etc.
-        + Release - IMDB ID DB, damit man die API nich strapaziert, wird eine DB angelegt, mit Name und ID, abgleich und nur bei 0 treffer wird die API abgefragt
+        + Release - IMDB ID DB, damit man die API nich strapaziert, wird eine DB angelegt, mit Name und ID, 
+          abgleich und nur bei 0 treffer wird die API abgefragt
         + bisschen dies, bisschen das :)
         - fehler, hoffe ich
 
