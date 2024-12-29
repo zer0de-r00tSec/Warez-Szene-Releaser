@@ -77,7 +77,7 @@ Es ist ein wahres AiO Script, es kann einiges an Arbeit abnehmen, dennoch sollte
         + bisschen dies, bisschen das :)
         - fehler, hoffe ich
 
-## Mitwirken
+## Mitwirkende
 
 ihr wisst es doch eh :-)
 
