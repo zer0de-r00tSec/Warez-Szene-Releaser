@@ -41,7 +41,7 @@ else:
 
 
 
-REQUIRED_PACKAGES = ['requests', 'wget', 'configparser', 'subprocess', 'datetime']
+REQUIRED_PACKAGES = ['requests', 'wget', 'configparser', 'subprocess', 'datetime', 'pymediainfo', 'pyfiglet']
 
 # Import-Anweisungen
 for package in REQUIRED_PACKAGES:
