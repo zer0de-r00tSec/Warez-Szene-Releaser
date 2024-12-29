@@ -5,8 +5,6 @@
 # Todo
 # 
 #
-
-
 # Debug ON/OFF
 DEBUG = 0
 
@@ -26,7 +24,8 @@ import os
 import sys
 import shutil
 import string
-
+from pymediainfo import MediaInfo
+import pyfiglet
 
 # iMPORT UPDATER
 import updater
@@ -55,7 +54,7 @@ else:
     sys.exit(1)
 
 ___AUTHOR___ = 'zer0.de^r00tSec'
-___VERSION___ = '2.2.2'
+___VERSION___ = '2.2.3'
 
 if linux == 1:
     # LiNUX COLOR CODES (SHELL)
@@ -621,6 +620,81 @@ def extract_info(input_string, dupe=False):
     else:
         return input_string
 
+def get_hdr_info(movie_complete_path):
+    try:
+        media_info = MediaInfo.parse(movie_complete_path)
+    except Exception as e:
+        # Fehler beim Einlesen der Datei behandeln
+        print(f"{RED}    [!!] Fehler beim Einlesen der Mediainformationen: {e}")
+        return None
+
+    hdr_text = ""
+
+    if DEBUG == 1:
+        video_track = next((track for track in media_info.tracks if track.track_type == "Video"), None)
+
+        # Zeige den gesamten Inhalt des Video-Tracks an
+        video_track_info = {k: v for k, v in vars(video_track).items()}
+        print(json.dumps(video_track_info, indent=4))
+        print(f"{YELLOW}    [*] Video-Track Details: {video_track}")
+
+    for track in media_info.tracks:
+        if track.track_type == "Video":
+            try:
+                # HDR format auslesen
+                if hasattr(track, "hdr_format") and track.hdr_format:
+                    hdr_text += " ".join(track.hdr_format)
+            except:
+                # Feld nicht gefunden, passen
+                pass
+            # die leerschritte entfernen und kommata adden
+            hdr_text = hdr_text.replace(" ", "")
+            hdr_text = f"{hdr_text},"
+
+            # jetzt den rest durchlaufen
+            try:
+                if hasattr(track, "other_hdr_format") and track.other_hdr_format:
+                    hdr_text += " ".join(track.other_hdr_format)
+
+                if hasattr(track, "hdr_format_commercial") and track.hdr_format_commercial:
+                    hdr_text += " ".join(track.hdr_format_commercial)
+                
+                if hasattr(track, "hdr_format_compatibility") and track.hdr_format_compatibility:
+                    hdr_text += " ".join(track.hdr_format_compatibility)
+            except:
+                # Felder nicht gefunden, passen
+                pass
+
+            if DEBUG == 1:
+                print(f"{YELLOW}    [*] 1.hdr_matches = {hdr_text}")
+
+            # die leerschritte entfernen und kommata adden
+            hdr_text = hdr_text.replace(" ", "")
+            hdr_text = f"{hdr_text},"            
+
+            # Extrahiere relevante HDR-Typen
+            hdr_matches = set()
+            try:
+                if re.search(r"\bDolbyVision\b", hdr_text, re.IGNORECASE):
+                    hdr_matches.add("DoVi")
+                if re.search(r"\bHDR10\+\b", hdr_text, re.IGNORECASE):
+                    hdr_matches.add("HDR10+")
+                if re.search(r"\bHDR10\b", hdr_text, re.IGNORECASE):
+                    hdr_matches.add("HDR10")
+            except Exception as e:
+                print(f"{RED}    [!!] Fehler beim Verarbeiten von HDR-Informationen: {e}")
+
+            if DEBUG == 1:
+                print(f"{YELLOW}    [*] 2.hdr_matches = {hdr_matches}")
+            # Rückgabe des Ergebnisses
+            if not hdr_matches:
+                return None
+            else:
+                return "/".join(sorted(hdr_matches))
+
+    # Falls keine Video-Tracks gefunden wurden
+    return None
+
 def find_imdb_link(imdb_search):
     # GET ALL NECESERY VARs
     config = configparser.ConfigParser()
@@ -714,7 +788,7 @@ def find_omdb_link(imdb_search):
             # insert result in db
             insert_data(imdb_search, imdb_id)
 
-            return f"https://www.imdb.com/title/{imdb_id}", imdb_search
+            return f"https://www.imdb.com/title/{imdb_id}"
 
     except requests.exceptions.HTTPError as err:
         # Behandlung von HTTP-Fehlern
@@ -741,7 +815,7 @@ def get_omdb_link(movie_complete_path):
     else:
             IMDB_LINK = find_omdb_link(imdb_search)
     
-    return IMDB_LINK, imdb_search
+    return IMDB_LINK
 
 def create_dirs(source_dir, release_dir_dest):
     dirs = ["Sample"]
@@ -770,19 +844,6 @@ def create_dirs(source_dir, release_dir_dest):
     return PROOF_DIR, SUBS_DIR
 
 def cut_movie(movie_complete_path, release_dir_dest, filename, CUT_FROM, CUT_TO):
-    """
-    Cut a movie using mkvmerge.
-
-    Args:
-        movie_complete_path (str): The complete path of the movie file.
-        destination (str): The destination directory.
-        CUT_FROM (int): The starting time (in seconds) of the cut.
-        CUT_TO (int): The ending time (in seconds) of the cut.
-        release_dir_dest (str): The name of the movie.
-
-    Returns:
-        bool: True if the cut was successful and the file was created, False otherwise.
-    """
     movie = filename
     sample_file = f"{movie.lower()}_sample.mkv"
     movie_sample = os.path.join(release_dir_dest, "Sample", sample_file)
@@ -811,7 +872,7 @@ def cut_movie(movie_complete_path, release_dir_dest, filename, CUT_FROM, CUT_TO)
               ___VERSION___, " Sample Error: %s" % e)
         return False
 
-def create_nfo(movie_complete_path, destination, movie, filename, file_source, IMDB_LINK) -> None:
+def create_nfo(movie_complete_path, destination, movie, filename, file_source, IMDB_LINK):
     # CREATE NFO
     # GET ALL NECESSARY VARs
     config = configparser.ConfigParser()
@@ -819,8 +880,19 @@ def create_nfo(movie_complete_path, destination, movie, filename, file_source, I
 
     NFO_GROUP_NAME = config.get('NFO', 'NFO_GROUP_NAME')
     NFO_GROUP_NAME_SHORT = config.get('NFO', 'NFO_GROUP_NAME_SHORT')
-    MORE_NOTES = config.get('NFO', 'NOTES')
+    MORE_NOTES = config.get('NFO', 'NOTES', raw=True)
     CODEC_REPLACEMENTS = dict(config.items('REPLACEMENTS'))
+    
+    # Get codec
+    start = os.path.splitext(movie)[0].rfind(".") + 1
+    end = os.path.splitext(movie)[0].rfind("-", start)
+    codec = os.path.splitext(movie)[0][start:end]
+    codec_info = ""
+
+    # Get HDR info
+    hdr_info = get_hdr_info(movie_complete_path)
+    if hdr_info != None:
+        codec_info = f" | {hdr_info}"
 
     file = os.path.splitext(movie)[0]
     movie_nfo = f"{destination}{separator}{file}{separator}"
@@ -841,7 +913,7 @@ def create_nfo(movie_complete_path, destination, movie, filename, file_source, I
     now = datetime.datetime.now()
 
     if file_source.lower() == "web":
-        TOUCH = f" untouched\n                       {MORE_NOTES}"
+        TOUCH = f" untouched\n                        {MORE_NOTES}"
     else:
         TOUCH = f" {MORE_NOTES}"
 
@@ -849,9 +921,9 @@ def create_nfo(movie_complete_path, destination, movie, filename, file_source, I
     GROUP_NAME = f"{NFO_GROUP_NAME}\n\n"
 
     # PATH TO THE NFO TEMPLATE
-    NFO_TEMPLATE = f"{os.path.abspath(".")}{separator}config{separator}{NFO_GROUP_NAME_SHORT}_nfo.txt"
+    NFO_TEMPLATE = f"{os.path.abspath('.')}{separator}config{separator}{NFO_GROUP_NAME_SHORT}_nfo.txt"
     # APPEND ON TOP
-    NFO_HEADER = f"RELEASE               : {os.path.basename(destination + separator + os.path.splitext(movie)[0])}\nDATE                  : {now.strftime('%d-%m-%Y')}\nSOURCE                : {file_source}\n"
+    NFO_HEADER = f"RELEASE               : {os.path.basename(destination + separator + os.path.splitext(movie)[0])}\nDATE                  : {now.strftime('%d-%m-%Y')}\nCODEC                 : {codec}{codec_info}\nSOURCE                : {file_source}"
     # APPEND ON FOOTER
     NFO_FOOTER = f"IMDB                  : {IMDB_LINK}\n\nNOTES                 :{TOUCH}"
     # CHANGE END!
@@ -862,16 +934,16 @@ def create_nfo(movie_complete_path, destination, movie, filename, file_source, I
     # THE BODY
 
     if linux == 1:
-        syntax = f"mediainfo --Inform=file://\"{NFO_TEMPLATE}\"  \"{movie_complete_path}\" >> \"{movie_nfo}\""
+        syntax = f"--Inform=\"file://{NFO_TEMPLATE}\"  \"{movie_complete_path}\" >> \"{movie_nfo}\""
 
         if DEBUG == 1:
             print(
                 f"{YELLOW}    [*] movie_complete_path : {movie_complete_path}")
             print(f"{YELLOW}    [*] Mediainfo           : {syntax}")
 
-        os.system(syntax)
+        os.system(f"mediainfo {syntax}")
     else:
-        syntax = f"--Inform=file://\"{NFO_TEMPLATE}\"  \"{movie_complete_path}\" >> \"{movie_nfo}\""
+        syntax = f"--Inform=\"file://{NFO_TEMPLATE}\"  \"{movie_complete_path}\" >> \"{movie_nfo}\""
 
         if DEBUG == 1:
             print(
@@ -915,9 +987,6 @@ def create_nfo_with_template(media_file_content, nfo_template, destination, file
     if DEBUG == 1:
          print(f"{YELLOW}    NFO Template: {nfo_template}")
          print(f"{YELLOW}    NFO: {movie_nfo}")
-
-    key = ["general_duration", "general_file_size", "video_duration", "video_bit_rate", "audio_duration", "audio_bit_rate", "subs_string"]
-    value = [general_duration, general_file_size, video_res, video_bit_rate, audio_string, subs_string]
 
     # Tonspuren
     audios = ""
@@ -1239,7 +1308,7 @@ def run(source_dir, destination_dir, movie_complete_path, config_file, file_sour
     FTP_SSL = config.get('FTP', 'FTP_SSL')
     FTP_USER = config.get('FTP', 'FTP_USER')
     FTP_PASS = config.get('FTP', 'FTP_PASS')
-    RAR_USE = config.get('RAR', 'RAR_USE')
+    RAR_USE = config.getint('RAR', 'RAR_USE')
     IRC_USE = config.getint('IRC', 'IRC_USE')
     IRC_SERVER = config.get('IRC', 'IRC_SERVER')
     IRC_SERVER_PW = config.get('IRC', 'IRC_SERVER_PW')
@@ -1265,6 +1334,9 @@ def run(source_dir, destination_dir, movie_complete_path, config_file, file_sour
     movie = os.path.split(movie_complete_path)[1]
     release_dir_dest = f"{destination_dir}{separator}{movie[:-4]}"
 
+    if DEBUG == 1:
+        print(f"{YELLOW}    [*] RAR_USE             : {RAR_USE}")
+
     # FiND MOViE NAME
     filename = extract_info(movie[:-4])
 
@@ -1277,19 +1349,19 @@ def run(source_dir, destination_dir, movie_complete_path, config_file, file_sour
 
     # GET iMDB LiNK
     if IMDB_USE == 1:
-        LINK, S = get_imdb_link(movie_complete_path)
+        LINK = get_imdb_link(movie_complete_path)
     
         if verbose_mode == True:
-            IMDB_LINK = ask_yes_no_imdb(f"Is the Link {LINK} right?", S)
+            IMDB_LINK = ask_yes_no_imdb(f"Is the Link {LINK} right?",f"{movie[:-4]}")
         else:
             IMDB_LINK = LINK
 
     # GET OMDB LiNK
     if OMDB_USE == 1:
-        LINK, S = get_omdb_link(movie_complete_path)
+        LINK = get_omdb_link(movie_complete_path)
     
         if verbose_mode == True:
-            IMDB_LINK = ask_yes_no_imdb(f"Is the Link {LINK} right?", S)
+            IMDB_LINK = ask_yes_no_imdb(f"Is the Link {LINK} right?",f"{movie[:-4]}")
         else:
             IMDB_LINK = LINK
 
@@ -1446,16 +1518,11 @@ def credits():
     Thanks a lot!""")
 
 def banner():
-    print(BLUE+""" 
-    ███████╗███████╗███████╗███╗   ██╗███████╗    ██████╗ ███████╗██╗     ███████╗ █████╗ ███████╗███████╗██████╗ 
-    ██╔════╝╚══███╔╝██╔════╝████╗  ██║██╔════╝    ██╔══██╗██╔════╝██║     ██╔════╝██╔══██╗██╔════╝██╔════╝██╔══██╗
-    ███████╗  ███╔╝ █████╗  ██╔██╗ ██║█████╗      ██████╔╝█████╗  ██║     █████╗  ███████║███████╗█████╗  ██████╔╝
-    ╚════██║ ███╔╝  ██╔══╝  ██║╚██╗██║██╔══╝      ██╔══██╗██╔══╝  ██║     ██╔══╝  ██╔══██║╚════██║██╔══╝  ██╔══██╗
-    ███████║███████╗███████╗██║ ╚████║███████╗    ██║  ██║███████╗███████╗███████╗██║  ██║███████║███████╗██║  ██║
-    ╚══════╝╚══════╝╚══════╝╚═╝  ╚═══╝╚══════╝    ╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝
-
-    © by %s - 2019-2023   (v%s)
-    --------------------------------------------------""" % (___AUTHOR___, ___VERSION___) + ENDC)
+    ascii_banner = pyfiglet.figlet_format("Szene Releaser", font='calvin_s')
+    print(f"""{BLUE}
+{ascii_banner} 
+© by {___AUTHOR___} - 2019-2025   (v{___VERSION___}) 
+--------------------------------------------------{ENDC}""")
 
 if __name__ == '__main__':
     if len(sys.argv) >= 5:
@@ -1480,6 +1547,7 @@ if __name__ == '__main__':
         # check if database file exists
         if not os.path.isfile(f"{DATABASE_FILE}"):
             create_database()
+    
     elif len(sys.argv) >= 4:
         banner()
 
@@ -1488,23 +1556,19 @@ if __name__ == '__main__':
 
         input_folder, destination_dir, file_source = sys.argv[1:]
 
-        # check if database file exists
-        if not os.path.isfile(f"{DATABASE_FILE}"):
-            create_database()
-
     else:
         banner()
-        print(f"\n    usage: {sys.argv[0]} \"Source Directory\" \"Destination Directory\" \"File Source e.g WEB or BR\" \"Optional: custom_config.ini\" \"IMDB_ID\" \"verbose\" run it in interactiv mode \n\n\n")
+        print(f"\nusage: {sys.argv[0]} \"Source Directory\" \"Destination Directory\" \"File Source e.g WEB or BR\" \"Optional: custom_config.ini\" \"IMDB_ID\" \"verbose\" run it in interactiv mode \n\n\n")
         sys.exit(1)
 
     if DEBUG == 1:
-        print(f"{YELLOW}    [*] ARGV               : {len(sys.argv)}")
-        print(f"{YELLOW}    [*] ARGV1              : {sys.argv[1]}")
-        print(f"{YELLOW}    [*] ARGV2              : {sys.argv[2]}")
-        print(f"{YELLOW}    [*] ARGV3              : {sys.argv[3]}")
-        print(f"{YELLOW}    [*] ARGV4              : {sys.argv[4]}")
-        print(f"{YELLOW}    [*] ARGV5              : {sys.argv[5]}")
-        print(f"{YELLOW}    [*] INI FILE           : {config_file}")
+        print(f"{YELLOW}    [*] ARGV                : {len(sys.argv)}")
+        print(f"{YELLOW}    [*] ARGV1               : {sys.argv[1]}")
+        print(f"{YELLOW}    [*] ARGV2               : {sys.argv[2]}")
+        print(f"{YELLOW}    [*] ARGV3               : {sys.argv[3]}")
+        print(f"{YELLOW}    [*] ARGV4               : {sys.argv[4]}") if len(sys.argv) > 4 else None
+        print(f"{YELLOW}    [*] ARGV5               : {sys.argv[5]}") if len(sys.argv) > 5 else None
+        print(f"{YELLOW}    [*] INI FILE            : {config_file}")
 
     if "verbose" in sys.argv:
         verbose_mode = True
