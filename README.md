@@ -63,6 +63,12 @@ Es ist ein wahres AiO Script, es kann einiges an Arbeit abnehmen, dennoch sollte
   ...
 
 ## Changelog
+    2.2.3
+        + in der INI können nur bei den NOTES, Steuerzeichen wie \t genutzt werden zum einrücken von Text
+        + HDR Support, hier wird nun HDR10+ HDR10 und Dolby Vision geloggt und in die NFO geschrieben.
+          hierzu, function get_hdr_info in Zeile 623 anpassen - THX hier an ... Du weisst bescheid :)
+        +/- Bugs gefunden und beseitig und natürlich neue dazu geschrieben, soll ja nich Langweilig werden.
+        
     2.2.2
         + OMDB Support, IMDB Free ist Abgeschaltet worden, daher die Alternative
         + Replacements vom Codec, statt MPEG-4 MP4 etc.
